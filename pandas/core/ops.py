@@ -346,47 +346,61 @@ def _get_op_name(op, special):
 _op_descriptions = {
     'add': {'op': '+',
             'desc': 'Addition',
-            'reverse': 'radd'},
+            'reverse': 'radd',
+            'is_comparison': False},
     'sub': {'op': '-',
             'desc': 'Subtraction',
-            'reverse': 'rsub'},
+            'reverse': 'rsub',
+            'is_comparison': False},
     'mul': {'op': '*',
             'desc': 'Multiplication',
-            'reverse': 'rmul'},
+            'reverse': 'rmul',
+            'is_comparison': False},
     'mod': {'op': '%',
             'desc': 'Modulo',
-            'reverse': 'rmod'},
+            'reverse': 'rmod',
+            'is_comparison': False},
     'pow': {'op': '**',
             'desc': 'Exponential power',
-            'reverse': 'rpow'},
+            'reverse': 'rpow',
+            'is_comparison': False},
     'truediv': {'op': '/',
                 'desc': 'Floating division',
-                'reverse': 'rtruediv'},
+                'reverse': 'rtruediv',
+                'is_comparison': False},
     'floordiv': {'op': '//',
                  'desc': 'Integer division',
-                 'reverse': 'rfloordiv'},
+                 'reverse': 'rfloordiv',
+                 'is_comparison': False},
     'divmod': {'op': 'divmod',
                'desc': 'Integer division and modulo',
-               'reverse': None},
+               'reverse': None,
+               'is_comparison': False},
 
     'eq': {'op': '==',
                  'desc': 'Equal to',
-                 'reverse': None},
+                 'reverse': None,
+                 'is_comparison': True},
     'ne': {'op': '!=',
                  'desc': 'Not equal to',
-                 'reverse': None},
+                 'reverse': None,
+                 'is_comparison': True},
     'lt': {'op': '<',
                  'desc': 'Less than',
-                 'reverse': None},
+                 'reverse': None,
+                 'is_comparison': True},
     'le': {'op': '<=',
                  'desc': 'Less than or equal to',
-                 'reverse': None},
+                 'reverse': None,
+                 'is_comparison': True},
     'gt': {'op': '>',
                  'desc': 'Greater than',
-                 'reverse': None},
+                 'reverse': None,
+                 'is_comparison': True},
     'ge': {'op': '>=',
                  'desc': 'Greater than or equal to',
-                 'reverse': None}}
+                 'reverse': None,
+                 'is_comparison': True}}
 
 _op_names = list(_op_descriptions.keys())
 for key in _op_names:
@@ -442,6 +456,54 @@ c    1.0
 d    1.0
 e    NaN
 dtype: float64
+
+See also
+--------
+Series.{reverse}
+"""
+
+_flex_doc_comp_SERIES = """
+Compares series is {desc} other, element-wise (binary operator `{op_name}`).
+
+Parameters
+----------
+other : Series or scalar value
+fill_value : None or float value, default None (NaN)
+    Fill existing missing (NaN) values, and any new element needed for
+    successful Series alignment, with this value before computation.
+    If data in both corresponding Series locations is missing
+    the result will be missing
+level : int or name
+    Broadcast across a level, matching Index values on the
+    passed MultiIndex level
+
+Returns
+-------
+result : Series
+
+Examples
+--------
+>>> a = pd.Series([1, 1, 1, np.nan], index=['a', 'b', 'c', 'd'])
+>>> a
+a    1.0
+b    1.0
+c    1.0
+d    NaN
+dtype: float64
+>>> b = pd.Series([1, np.nan, 1, np.nan], index=['a', 'b', 'd', 'e'])
+>>> b
+a    1.0
+b    NaN
+d    1.0
+e    NaN
+dtype: float64
+>>> a.eq(b, fill_value=0)
+a     True
+b    False
+c    False
+d    False
+e    False
+dtype: bool
 
 See also
 --------
@@ -562,8 +624,80 @@ See also
 DataFrame.{reverse}
 """
 
+_flex_doc_comp_FRAME = """
+Compares dataframe is {desc} other, element-wise (binary operator `{op_name}`).
+
+
+Parameters
+----------
+other : Series, DataFrame, or constant
+axis : {{0, 1, 'index', 'columns'}}
+    For Series input, axis to match Series index on
+level : int or name
+    Broadcast across a level, matching Index values on the
+    passed MultiIndex level
+
+Notes
+-----
+Mismatched indices will be unioned together
+
+Returns
+-------
+result : DataFrame
+
+Examples
+--------
+>>> a = pd.DataFrame([1, 1, 1, np.nan], index=['a', 'b', 'c', 'd'],
+                     columns=['one'])
+>>> a
+   one
+a  1.0
+b  1.0
+c  1.0
+d  NaN
+>>> b = pd.DataFrame(dict(one=[1, np.nan, 1, np.nan],
+                          two=[np.nan, 2, np.nan, 2]),
+                     index=['a', 'b', 'd', 'e'])
+>>> b
+   one  two
+a  1.0  NaN
+b  NaN  2.0
+d  1.0  NaN
+e  NaN  2.0
+>>> a.eq(b)
+     one    two
+a   True  False
+b  False  False
+c  False  False
+d  False  False
+e  False  False
+
+See also
+--------
+DataFrame.{reverse}
+"""
+
 _flex_doc_PANEL = """
-{desc} of series and other, element-wise (binary operator `{op_name}`).
+{desc} of panel and other, element-wise (binary operator `{op_name}`).
+Equivalent to ``{equiv}``.
+
+Parameters
+----------
+other : DataFrame or Panel
+axis : {{items, major_axis, minor_axis}}
+    Axis to broadcast over
+
+Returns
+-------
+Panel
+
+See also
+--------
+Panel.{reverse}
+"""
+
+_flex_doc_comp_PANEL = """
+Compares series is {desc} other, element-wise (binary operator `{op_name}`).
 Equivalent to ``{equiv}``.
 
 Parameters
@@ -596,6 +730,20 @@ Returns
 Panel
 """
 
+_agg_doc_FRAME = """
+Wrapper method for {op_name}
+
+Parameters
+----------
+other : DataFrame or Panel
+axis : {{items, major_axis, minor_axis}}
+    Axis to broadcast over
+
+Returns
+-------
+result : DataFrame
+"""
+
 
 def _make_flex_doc(op_name, typ):
     """
@@ -620,14 +768,25 @@ def _make_flex_doc(op_name, typ):
     else:
         equiv = typ + ' ' + op_desc['op'] + ' other'
 
-    if typ == 'series':
-        base_doc = _flex_doc_SERIES
-    elif typ == 'dataframe':
-        base_doc = _flex_doc_FRAME
-    elif typ == 'panel':
-        base_doc = _flex_doc_PANEL
+    if op_desc['is_comparison']:
+        if typ == 'series':
+            base_doc = _flex_doc_comp_SERIES
+        elif typ == 'dataframe':
+            base_doc = _flex_doc_comp_FRAME
+        elif typ == 'panel':
+            base_doc = _flex_doc_comp_PANEL
+        else:
+            raise AssertionError('Invalid typ argument.')
     else:
-        raise AssertionError('Invalid typ argument.')
+        if typ == 'series':
+            base_doc = _flex_doc_SERIES
+        elif typ == 'dataframe':
+            base_doc = _flex_doc_FRAME
+        elif typ == 'panel':
+            base_doc = _flex_doc_PANEL
+        else:
+            raise AssertionError('Invalid typ argument.')
+
     doc = base_doc.format(desc=op_desc['desc'], op_name=op_name,
                           equiv=equiv, reverse=op_desc['reverse'])
     return doc
@@ -1521,8 +1680,13 @@ def _flex_comp_method_FRAME(cls, op, special):
             result = mask_cmp_op(x, y, op, (np.ndarray, ABCSeries))
         return result
 
-    @Appender('Wrapper for flexible comparison methods {name}'
-              .format(name=op_name))
+    if op_name in _op_descriptions:
+        # i.e. include "add" but not "__add__"
+        doc = _make_flex_doc(op_name, 'dataframe')
+    else:
+        doc = _agg_doc_FRAME % op_name
+
+    @Appender(doc)
     def f(self, other, axis=default_axis, level=None):
 
         other = _align_method_FRAME(self, other, axis)
